@@ -22,7 +22,7 @@ func (what *Threagile) initList() *Threagile {
 			cmd.Println("----------------------")
 			cmd.Println("Custom risk rules:")
 			cmd.Println("----------------------")
-			customRiskRules := model.LoadCustomRiskRules(what.config.GetPluginFolder(), what.config.GetRiskRulePlugins(), DefaultProgressReporter{Verbose: what.config.GetVerbose()})
+			customRiskRules, _ := model.LoadCustomRiskRules(what.config.GetPluginFolder(), what.config.GetRiskRulePlugins(), DefaultProgressReporter{Verbose: what.config.GetVerbose()})
 			for id, customRule := range customRiskRules {
 				cmd.Println(id, "-->", customRule.Category().Title, "--> with tags:", customRule.SupportedTags())
 			}

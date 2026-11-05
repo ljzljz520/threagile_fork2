@@ -50,6 +50,7 @@ const (
 	addModelTitleFlagName              = "add-model-title"
 	keepDiagramSourceFilesFlagName     = "keep-diagram-source-files"
 	ignoreOrphanedRiskTrackingFlagName = "ignore-orphaned-risk-tracking"
+	allowPartialRiskAnalysisFlagName   = "allow-partial-risk-analysis"
 
 	skipDataFlowDiagramFlagName     = "skip-data-flow-diagram"
 	skipDataAssetDiagramFlagName    = "skip-data-asset-diagram"

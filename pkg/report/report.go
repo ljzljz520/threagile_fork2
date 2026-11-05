@@ -4218,19 +4218,42 @@ func (r *pdfReporter) createRiskRulesChecked(parsedModel *types.Model, modelFile
 	html.Write(5, strBuilder.String())
 	strBuilder.Reset()
 
+	// when partial risk analysis was explicitly enabled, prominently mark the gaps
+	if failedLines := failedRuleExecutionLines(parsedModel); len(failedLines) > 0 {
+		r.pdf.Ln(-1)
+		r.pdf.SetFont("Helvetica", "B", fontSizeBody)
+		r.pdf.SetTextColor(200, 0, 0)
+		r.pdf.MultiCell(190, 6, fmt.Sprintf("WARNING - INCOMPLETE RISK ANALYSIS: partial risk analysis was explicitly "+
+			"enabled, but %d risk rule(s) failed or returned invalid results. The findings of this report do NOT cover these rules:",
+			len(failedLines)), "0", "0", false)
+		r.pdf.SetFont("Helvetica", "", fontSizeSmall)
+		for _, failedLine := range failedLines {
+			r.pdf.MultiCell(190, 5, "  - "+failedLine, "0", "0", false)
+		}
+		r.pdfColorBlack()
+		r.pdf.SetFont("Helvetica", "", fontSizeBody)
+	}
+
+	ruleStatus := func(ruleId string) (string, string, bool) {
+		prefix, detail, failedRule := ruleStatusLabel(parsedModel, ruleId)
+		if prefix == "" && contains(skipRiskRules, ruleId) {
+			prefix = "SKIPPED - "
+		}
+		return prefix, detail, failedRule
+	}
+
 	// TODO use the new run system to discover risk rules instead of hard-coding them here:
-	skipped := ""
 	r.pdf.Ln(-1)
 
 	for id, customRule := range customRiskRules {
 		r.pdf.Ln(-1)
 		r.pdf.SetFont("Helvetica", "B", fontSizeBody)
-		if contains(skipRiskRules, id) {
-			skipped = "SKIPPED - "
-		} else {
-			skipped = ""
+		statusPrefix, statusDetail, failedRule := ruleStatus(id)
+		if failedRule {
+			r.pdf.SetTextColor(200, 0, 0)
 		}
-		r.pdf.CellFormat(190, 3, skipped+customRule.Category().Title, "0", 0, "", false, 0, "")
+		r.pdf.CellFormat(190, 3, statusPrefix+customRule.Category().Title, "0", 0, "", false, 0, "")
+		r.pdfColorBlack()
 		r.pdf.Ln(-1)
 		r.pdf.SetFont("Helvetica", "", fontSizeSmall)
 		r.pdf.CellFormat(190, 6, id, "0", 0, "", false, 0, "")
@@ -4239,6 +4262,12 @@ func (r *pdfReporter) createRiskRulesChecked(parsedModel *types.Model, modelFile
 		r.pdf.CellFormat(190, 6, "Custom Risk Rule", "0", 0, "", false, 0, "")
 		r.pdf.Ln(-1)
 		r.pdf.SetFont("Helvetica", "", fontSizeBody)
+		if failedRule && len(statusDetail) > 0 {
+			r.pdf.SetTextColor(200, 0, 0)
+			r.pdf.MultiCell(190, 5, "  Execution result: "+statusDetail, "0", "0", false)
+			r.pdfColorBlack()
+			r.pdf.Ln(-1)
+		}
 		r.pdfColorGray()
 		r.pdf.CellFormat(5, 6, "", "0", 0, "", false, 0, "")
 		r.pdf.CellFormat(25, 6, "STRIDE:", "0", 0, "", false, 0, "")
@@ -4299,17 +4328,23 @@ func (r *pdfReporter) createRiskRulesChecked(parsedModel *types.Model, modelFile
 	for _, rule := range r.riskRules {
 		r.pdf.Ln(-1)
 		r.pdf.SetFont("Helvetica", "B", fontSizeBody)
-		if contains(skipRiskRules, rule.Category().ID) {
-			skipped = "SKIPPED - "
-		} else {
-			skipped = ""
+		statusPrefix, statusDetail, failedRule := ruleStatus(rule.Category().ID)
+		if failedRule {
+			r.pdf.SetTextColor(200, 0, 0)
 		}
-		r.pdf.CellFormat(190, 3, skipped+rule.Category().Title, "0", 0, "", false, 0, "")
+		r.pdf.CellFormat(190, 3, statusPrefix+rule.Category().Title, "0", 0, "", false, 0, "")
+		r.pdfColorBlack()
 		r.pdf.Ln(-1)
 		r.pdf.SetFont("Helvetica", "", fontSizeSmall)
 		r.pdf.CellFormat(190, 6, rule.Category().ID, "0", 0, "", false, 0, "")
 		r.pdf.Ln(-1)
 		r.pdf.SetFont("Helvetica", "", fontSizeBody)
+		if failedRule && len(statusDetail) > 0 {
+			r.pdf.SetTextColor(200, 0, 0)
+			r.pdf.MultiCell(190, 5, "  Execution result: "+statusDetail, "0", "0", false)
+			r.pdfColorBlack()
+			r.pdf.Ln(-1)
+		}
 		r.pdfColorGray()
 		r.pdf.CellFormat(5, 6, "", "0", 0, "", false, 0, "")
 		r.pdf.CellFormat(25, 6, "STRIDE:", "0", 0, "", false, 0, "")

@@ -2118,17 +2118,34 @@ func (adoc adocReport) riskRulesChecked(f *os.File, modelFilename string, skipRi
 		"the following risk rules were checked:")
 	writeLine(f, "")
 
-	// TODO use the new run system to discover risk rules instead of hard-coding them here:
-	skipped := ""
+	// when partial risk analysis was explicitly enabled, prominently mark the gaps
+	if failedLines := failedRuleExecutionLines(adoc.model); len(failedLines) > 0 {
+		writeLine(f, "[WARNING]")
+		writeLine(f, ".==")
+		writeLine(f, fmt.Sprintf("*Incomplete risk analysis:* partial risk analysis was explicitly enabled, "+
+			"but %d risk rule(s) failed or returned invalid results. The findings of this report do NOT cover these rules:", len(failedLines)))
+		for _, failedLine := range failedLines {
+			writeLine(f, "\n* "+failedLine)
+		}
+		writeLine(f, ".==")
+		writeLine(f, "")
+	}
+
+	ruleStatus := func(ruleId string) (string, string, bool) {
+		prefix, detail, failedRule := ruleStatusLabel(adoc.model, ruleId)
+		if prefix == "" && contains(skipRiskRules, ruleId) {
+			prefix = "SKIPPED - "
+		}
+		return prefix, detail, failedRule
+	}
 
 	for id, customRule := range customRiskRules {
-		if contains(skipRiskRules, id) {
-			skipped = "SKIPPED - "
-		} else {
-			skipped = ""
-		}
-		writeLine(f, "== "+skipped+customRule.Category().Title)
+		statusPrefix, statusDetail, failedRule := ruleStatus(id)
+		writeLine(f, "== "+statusPrefix+customRule.Category().Title)
 		writeLine(f, "[.small]#"+id+"#")
+		if failedRule && len(statusDetail) > 0 {
+			writeLine(f, "[WARNING]#Execution result: "+statusDetail+"#")
+		}
 		writeLine(f, "")
 		writeLine(f, "_Custom Risk Rule_")
 		writeLine(f, `
@@ -2160,13 +2177,12 @@ func (adoc adocReport) riskRulesChecked(f *os.File, modelFilename string, skipRi
 	}
 
 	for _, rule := range adoc.riskRules {
-		if contains(skipRiskRules, rule.Category().ID) {
-			skipped = "SKIPPED - "
-		} else {
-			skipped = ""
-		}
-		writeLine(f, "== "+skipped+rule.Category().Title)
+		statusPrefix, statusDetail, failedRule := ruleStatus(rule.Category().ID)
+		writeLine(f, "== "+statusPrefix+rule.Category().Title)
 		writeLine(f, "[.small]#"+rule.Category().ID+"#")
+		if failedRule && len(statusDetail) > 0 {
+			writeLine(f, "[WARNING]#Execution result: "+statusDetail+"#")
+		}
 		writeLine(f, "")
 		writeLine(f, `
 [cols="h,1",frame=none,grid=none]

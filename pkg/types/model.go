@@ -54,6 +54,18 @@ type Model struct {
 	DirectContainingTrustBoundaryMappedByTechnicalAssetId map[string]*TrustBoundary       `json:"direct_containing_trust_boundary_mapped_by_technical_asset_id,omitempty" yaml:"direct_containing_trust_boundary_mapped_by_technical_asset_id,omitempty"`
 	GeneratedRisksByCategory                              map[string][]*Risk              `json:"generated_risks_by_category,omitempty" yaml:"generated_risks_by_category,omitempty"`
 	GeneratedRisksBySyntheticId                           map[string]*Risk                `json:"generated_risks_by_synthetic_id,omitempty" yaml:"generated_risks_by_synthetic_id,omitempty"`
+
+	// RuleExecutionResults holds the unified execution result (success incl. zero findings,
+	// skipped, failed, invalid) for every risk rule considered during analysis.
+	RuleExecutionResults RuleExecutionResults `json:"rule_execution_results,omitempty" yaml:"rule_execution_results,omitempty"`
+	// PartialRiskAnalysis is true when the analysis completed even though some rules failed
+	// or returned invalid results, explicitly tolerated via the partial analysis opt-in.
+	PartialRiskAnalysis bool `json:"partial_risk_analysis,omitempty" yaml:"partial_risk_analysis,omitempty"`
+}
+
+// RuleExecutionSummary returns a summarized view of the risk rule execution results.
+func (model *Model) RuleExecutionSummary() *RuleExecutionSummary {
+	return model.RuleExecutionResults.Summary(model.PartialRiskAnalysis)
 }
 
 type ProgressReporter interface {

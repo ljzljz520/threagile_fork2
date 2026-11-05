@@ -196,6 +196,9 @@ func (s *server) doItViaRuntimeCall(modelFile string, outputDir string,
 	if s.config.GetIgnoreOrphanedRiskTracking() { // TODO why add all them as arguments, when they are also variables on outer level?
 		args = append(args, "--ignore-orphaned-risk-tracking")
 	}
+	if s.config.GetAllowPartialRiskAnalysis() {
+		args = append(args, "--allow-partial-risk-analysis")
+	}
 	if generateDataFlowDiagram {
 		args = append(args, "--generate-data-flow-diagram")
 	}
@@ -264,10 +267,10 @@ func (s *server) editModelAnalyze(ginContext *gin.Context) {
 		Verbose:       s.config.GetVerbose(),
 		SuppressError: true,
 	}
-	customRiskRules := model.LoadCustomRiskRules(s.config.GetPluginFolder(), s.config.GetRiskRulePlugins(), progressReporter)
+	customRiskRules, customRuleLoadResults := model.LoadCustomRiskRules(s.config.GetPluginFolder(), s.config.GetRiskRulePlugins(), progressReporter)
 	builtinRiskRules := risks.GetBuiltInRiskRules()
 
-	result, err := model.AnalyzeModel(&modelInput, s.config, builtinRiskRules, customRiskRules, progressReporter)
+	result, err := model.AnalyzeModel(&modelInput, s.config, builtinRiskRules, customRiskRules, customRuleLoadResults, progressReporter)
 	if err != nil {
 		ginContext.JSON(http.StatusBadRequest, gin.H{
 			"error": "Unable to analyze model: " + err.Error(),
@@ -275,8 +278,14 @@ func (s *server) editModelAnalyze(ginContext *gin.Context) {
 		return
 	}
 
-	ginContext.JSON(http.StatusOK, gin.H{
+	response := gin.H{
 		"message": "Analyzed successfully",
 		"data":    result,
-	})
+	}
+	if result.ParsedModel != nil && result.ParsedModel.PartialRiskAnalysis {
+		response["message"] = "Analyzed with gaps: some risk rules failed or returned invalid results (partial risk analysis explicitly enabled)"
+		response["partial_analysis"] = true
+		response["rule_execution_summary"] = result.ParsedModel.RuleExecutionSummary()
+	}
+	ginContext.JSON(http.StatusOK, response)
 }

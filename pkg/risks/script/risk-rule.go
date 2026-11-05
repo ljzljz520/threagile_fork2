@@ -50,6 +50,11 @@ func (what *RiskRule) ParseFromData(text []byte) (*RiskRule, error) {
 	return what, nil
 }
 
+// RuleOrigin marks this rule as loaded from a YAML risk script.
+func (what *RiskRule) RuleOrigin() string {
+	return types.ScriptRuleOrigin
+}
+
 func (what *RiskRule) Category() *types.RiskCategory {
 	return &what.category
 }

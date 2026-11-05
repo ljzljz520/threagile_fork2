@@ -2,9 +2,65 @@ package report
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/threagile/threagile/pkg/types"
 )
+
+// ruleStatusLabel maps a rule id to its execution-result label for the "Risk Rules Checked" listings.
+// The prefix is prepended to the rule title; detail (if any) gives the failure/skip message.
+// The failed flag indicates that the rule did not complete successfully (failed or invalid).
+func ruleStatusLabel(parsedModel *types.Model, ruleID string) (prefix string, detail string, failed bool) {
+	if parsedModel == nil {
+		return "", "", false
+	}
+	if result, ok := parsedModel.RuleExecutionResults.ByID()[ruleID]; ok {
+		switch result.Status {
+		case types.RuleSkipped:
+			return "SKIPPED - ", result.Message, false
+		case types.RuleFailed:
+			return "FAILED - ", result.Message, true
+		case types.RuleInvalid:
+			return "INVALID RESULTS - ", result.Message, true
+		}
+	}
+	return "", "", false
+}
+
+// failedRuleExecutionLines returns the sorted list of human-readable lines describing rules
+// that failed or returned invalid results, including rules that could not even be loaded
+// (their rule id is the plugin file name and hence they do not appear in the normal listings).
+func failedRuleExecutionLines(parsedModel *types.Model) []string {
+	if parsedModel == nil {
+		return nil
+	}
+	lines := make([]string, 0)
+	for _, result := range parsedModel.RuleExecutionResults.Sorted() {
+		if result.Status != types.RuleFailed && result.Status != types.RuleInvalid {
+			continue
+		}
+		line := string(result.Status) + " rule " + result.RuleID + " (" + result.RuleOrigin + ")"
+		if strings.TrimSpace(result.Message) != "" {
+			line += ": " + strings.TrimSpace(result.Message)
+		}
+		lines = append(lines, line)
+	}
+	return lines
+}
+
+// skippedRuleCount returns how many rules were actively skipped.
+func skippedRuleCount(parsedModel *types.Model) int {
+	if parsedModel == nil {
+		return 0
+	}
+	count := 0
+	for _, result := range parsedModel.RuleExecutionResults {
+		if result.Status == types.RuleSkipped {
+			count++
+		}
+	}
+	return count
+}
 
 func filteredByRiskStatus(parsedModel *types.Model, status types.RiskStatus) []*types.Risk {
 	filteredRisks := make([]*types.Risk, 0)

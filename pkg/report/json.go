@@ -89,10 +89,12 @@ func overallRiskStatistics(parsedModel *types.Model) riskStatistics {
 			result.Risks[risk.Severity.String()][risk.RiskStatus.String()]++
 		}
 	}
+	result.RiskRuleExecution = parsedModel.RuleExecutionSummary()
 	return result
 }
 
 type riskStatistics struct {
 	// TODO add also some more like before / after (i.e. with mitigation applied)
-	Risks map[string]map[string]int `yaml:"risks" json:"risks"`
+	Risks             map[string]map[string]int   `yaml:"risks" json:"risks"`
+	RiskRuleExecution *types.RuleExecutionSummary `yaml:"risk_rule_execution,omitempty" json:"risk_rule_execution,omitempty"`
 }

@@ -76,7 +76,7 @@ func (what *Threagile) explainRules(cmd *cobra.Command, args []string) error {
 	cmd.Println("----------------------")
 	cmd.Println("Custom risk rules:")
 	cmd.Println("----------------------")
-	customRiskRules := model.LoadCustomRiskRules(what.config.GetPluginFolder(), what.config.GetRiskRulePlugins(), DefaultProgressReporter{Verbose: what.config.GetVerbose()})
+	customRiskRules, _ := model.LoadCustomRiskRules(what.config.GetPluginFolder(), what.config.GetRiskRulePlugins(), DefaultProgressReporter{Verbose: what.config.GetVerbose()})
 	for _, rule := range customRiskRules {
 		cmd.Printf("%v: %v\n", rule.Category().ID, rule.Category().Description)
 	}

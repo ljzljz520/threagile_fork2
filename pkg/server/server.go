@@ -62,6 +62,7 @@ type serverConfigReader interface {
 	GetAddLegend() bool
 	GetKeepDiagramSourceFiles() bool
 	GetIgnoreOrphanedRiskTracking() bool
+	GetAllowPartialRiskAnalysis() bool
 	GetThreagileVersion() string
 	GetProgressReporter() types.ProgressReporter
 }
@@ -225,7 +226,7 @@ func RunServer(config serverConfigReader, builtinRiskRules types.RiskRules) {
 	router.PUT("/models/:model-id/shared-runtimes/:shared-runtime-id", s.setSharedRuntime)
 	router.DELETE("/models/:model-id/shared-runtimes/:shared-runtime-id", s.deleteSharedRuntime)
 
-	s.customRiskRules = model.LoadCustomRiskRules(s.config.GetPluginFolder(), s.config.GetRiskRulePlugins(), config.GetProgressReporter())
+	s.customRiskRules, _ = model.LoadCustomRiskRules(s.config.GetPluginFolder(), s.config.GetRiskRulePlugins(), config.GetProgressReporter())
 
 	fmt.Println("Threagile is running...")
 	_ = router.Run(":" + strconv.Itoa(s.config.GetServerPort())) // listen and serve on 0.0.0.0:8080 or whatever port was specified

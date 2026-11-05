@@ -65,6 +65,7 @@ type Config struct {
 	AddLegendValue                  bool `json:"AddLegend,omitempty" yaml:"AddLegend"`
 	KeepDiagramSourceFilesValue     bool `json:"KeepDiagramSourceFiles,omitempty" yaml:"KeepDiagramSourceFiles"`
 	IgnoreOrphanedRiskTrackingValue bool `json:"IgnoreOrphanedRiskTracking,omitempty" yaml:"IgnoreOrphanedRiskTracking"`
+	AllowPartialRiskAnalysisValue   bool `json:"AllowPartialRiskAnalysis,omitempty" yaml:"AllowPartialRiskAnalysis"`
 
 	SkipDataFlowDiagramValue     bool `json:"SkipDataFlowDiagram,omitempty" yaml:"SkipDataFlowDiagram"`
 	SkipDataAssetDiagramValue    bool `json:"SkipDataAssetDiagram,omitempty" yaml:"SkipDataAssetDiagram"`
@@ -126,6 +127,7 @@ type ConfigGetter interface {
 	GetAddLegend() bool
 	GetKeepDiagramSourceFiles() bool
 	GetIgnoreOrphanedRiskTracking() bool
+	GetAllowPartialRiskAnalysis() bool
 	GetSkipDataFlowDiagram() bool
 	GetSkipDataAssetDiagram() bool
 	GetSkipRisksJSON() bool
@@ -212,6 +214,7 @@ func (c *Config) Defaults(buildTimestamp string) *Config {
 		AddLegendValue:                  false,
 		KeepDiagramSourceFilesValue:     false,
 		IgnoreOrphanedRiskTrackingValue: false,
+		AllowPartialRiskAnalysisValue:   false,
 
 		AttractivenessValue: Attractiveness{
 			Quantity: 0,
@@ -494,6 +497,9 @@ func (c *Config) Merge(config Config, values map[string]any) {
 
 		case strings.ToLower("IgnoreOrphanedRiskTracking"):
 			c.IgnoreOrphanedRiskTrackingValue = config.IgnoreOrphanedRiskTrackingValue
+
+		case strings.ToLower("AllowPartialRiskAnalysis"):
+			c.AllowPartialRiskAnalysisValue = config.AllowPartialRiskAnalysisValue
 
 		case strings.ToLower("Attractiveness"):
 			c.AttractivenessValue = config.AttractivenessValue
@@ -813,6 +819,14 @@ func (c *Config) GetIgnoreOrphanedRiskTracking() bool {
 
 func (c *Config) SetIgnoreOrphanedRiskTracking(ignoreOrphanedRiskTracking bool) {
 	c.IgnoreOrphanedRiskTrackingValue = ignoreOrphanedRiskTracking
+}
+
+func (c *Config) GetAllowPartialRiskAnalysis() bool {
+	return c.AllowPartialRiskAnalysisValue
+}
+
+func (c *Config) SetAllowPartialRiskAnalysis(allowPartialRiskAnalysis bool) {
+	c.AllowPartialRiskAnalysisValue = allowPartialRiskAnalysis
 }
 
 func (c *Config) GetSkipDataFlowDiagram() bool {
